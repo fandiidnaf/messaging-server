@@ -1,0 +1,51 @@
+definitions:
+  model.NotificationRequest:
+    properties:
+      body:
+        type: string
+      condition:
+        type: string
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      title:
+        type: string
+      token:
+        type: string
+      topic:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/notify:
+    post:
+      consumes:
+      - application/json
+      description: Send Notification to devide with FCM
+      parameters:
+      - description: Notification Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.NotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Send Notification
+      tags:
+      - notification
+swagger: "2.0"
