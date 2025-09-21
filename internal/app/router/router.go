@@ -7,15 +7,24 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(notificaionHandler *handler.NotificationHandler) *gin.Engine {
+func SetupRouter(notificationHandler *handler.NotificationHandler) *gin.Engine {
 	r := gin.Default()
 
 	api := r.Group("/api")
 	{
-		api.POST("/notify", notificaionHandler.SendNotification)
+		// Register & get tokens
+		api.POST("/register-token", notificationHandler.RegisterTokenDevice)
+		api.GET("/tokens", notificationHandler.GetRegisteredTokens)
+
+		// Notifications
+		api.POST("/notify", notificationHandler.SendNotification)
+
+		// Topic management
+		api.POST("/subscribe", notificationHandler.SubscribeToTopic)
+		api.POST("/unsubscribe", notificationHandler.UnsubscribeFromTopic)
 	}
 
-	// docs
+	// Swagger docs
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return r

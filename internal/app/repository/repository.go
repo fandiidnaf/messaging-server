@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"maps"
 
@@ -11,7 +13,11 @@ import (
 )
 
 type FCMRepository interface {
+	RegisterTokenDevice(token string) error
+	GetRegisteredTokens() ([]string, error)
 	SendNotification(notificationType model.NotificationType, title, body string, data map[string]string) (string, error)
+	SubscribeToTopic(tokens []string, topic string) (string, error)
+	UnsubscribeFromTopic(tokens []string, topic string) (string, error)
 }
 
 type fcmRepository struct {
@@ -29,6 +35,22 @@ func NewFCMRepository() FCMRepository {
 	return &fcmRepository{client: client}
 }
 
+var tokens []string = make([]string, 0)
+
+func (r *fcmRepository) RegisterTokenDevice(token string) error {
+	if token == "" {
+		return errors.New("The token cannot empty")
+	}
+
+	tokens = append(tokens, token)
+
+	return nil
+}
+
+func (r *fcmRepository) GetRegisteredTokens() ([]string, error) {
+	return tokens, nil
+}
+
 func (r *fcmRepository) SendNotification(notificationType model.NotificationType, title, body string, data map[string]string) (string, error) {
 
 	mergedData := map[string]string{
@@ -37,6 +59,36 @@ func (r *fcmRepository) SendNotification(notificationType model.NotificationType
 	}
 
 	maps.Copy(mergedData, data)
+
+	if notificationType.Tokens != nil {
+		msgs := &messaging.MulticastMessage{
+			Tokens: notificationType.Tokens,
+			Data:   mergedData,
+			Android: &messaging.AndroidConfig{
+				Priority: "high",
+			},
+		}
+
+		response, err := r.client.SendEachForMulticast(context.Background(), msgs)
+
+		if err != nil {
+			return "", err
+		}
+
+		if response.FailureCount > 0 {
+			failedTokens := make([]string, 0)
+
+			for idx, resp := range response.Responses {
+				if !resp.Success {
+					failedTokens = append(failedTokens, tokens[idx])
+				}
+			}
+
+			return "", fmt.Errorf("Failed to send notification to %d tokens", len(failedTokens))
+		}
+
+		return "messages sent successfully", nil
+	}
 
 	msg := &messaging.Message{
 		Token:     notificationType.Token,
@@ -54,4 +106,38 @@ func (r *fcmRepository) SendNotification(notificationType model.NotificationType
 	}
 
 	return r.client.Send(context.Background(), msg)
+}
+
+func (r *fcmRepository) SubscribeToTopic(tokens []string, topic string) (string, error) {
+	if tokens == nil {
+		return "", errors.New("tokens cannot be empty")
+	}
+
+	if topic == "" {
+		return "", errors.New("topic cannot be empty")
+	}
+
+	_, err := r.client.SubscribeToTopic(context.Background(), tokens, topic)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("subscribed successfully to topic: %s", topic), nil
+}
+
+func (r *fcmRepository) UnsubscribeFromTopic(tokens []string, topic string) (string, error) {
+	if tokens == nil && len(tokens) == 0 {
+		return "", errors.New("tokens cannot be nil or empty")
+	}
+
+	if topic == "" {
+		return "", errors.New("topic cannot be empty")
+	}
+
+	_, err := r.client.UnsubscribeFromTopic(context.Background(), tokens, topic)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("unsubscribed successfully from topic: %s", topic), nil
 }

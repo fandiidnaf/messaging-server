@@ -13,6 +13,10 @@ definitions:
         type: string
       token:
         type: string
+      tokens:
+        items:
+          type: string
+        type: array
       topic:
         type: string
     type: object
@@ -23,7 +27,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send Notification to devide with FCM
+      description: Send Notification to device with FCM
       parameters:
       - description: Notification Request
         in: body
@@ -46,6 +50,115 @@ paths:
               type: string
             type: object
       summary: Send Notification
+      tags:
+      - notification
+  /api/register-token:
+    post:
+      consumes:
+      - application/json
+      description: Register device token to FCM server
+      parameters:
+      - description: Device Token
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register Token Device
+      tags:
+      - notification
+  /api/subscribe:
+    post:
+      consumes:
+      - application/json
+      description: Subscribe devices to a topic
+      parameters:
+      - description: Tokens and Topic
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Subscribe To Topic
+      tags:
+      - notification
+  /api/tokens:
+    get:
+      description: Get all registered device tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Get Registered Tokens
+      tags:
+      - notification
+  /api/unsubscribe:
+    post:
+      consumes:
+      - application/json
+      description: Unsubscribe devices from a topic
+      parameters:
+      - description: Tokens and Topic
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Unsubscribe From Topic
       tags:
       - notification
 swagger: "2.0"
