@@ -90,12 +90,20 @@ func (r *fcmRepository) SendNotification(notificationType model.NotificationType
 		return "messages sent successfully", nil
 	}
 
+	// var duration = time.Second * 0
+
 	msg := &messaging.Message{
 		Token:     notificationType.Token,
 		Topic:     notificationType.Topic,
 		Condition: notificationType.Condition,
 		Android: &messaging.AndroidConfig{
 			Priority: "high",
+			// TTL:      &duration,
+		},
+		APNS: &messaging.APNSConfig{
+			Headers: map[string]string{
+				"apns-priority": "5",
+			},
 		},
 		// Notification: &messaging.Notification{
 		// 	Title:    title,
